@@ -105,6 +105,35 @@ Here are some examples:
 
     Have a look at `PyFormat <python_format_>`_ for information how to use new-style Python formatting.
 
+.. _speed builds:
+
+Speed Up Builds
+===============
+
+By default all tags and branches matched by smv_tag_whitelist and smv_branch_whitelist
+are rebuilt from scratch. This means that CI will take longer as more versions of your
+source are tagged.
+
+This can be avoided by adding the following to conf.py
+
+.. code-block:: python
+
+    smv_rebuild_tags = False
+
+This causes sphinx multiversion to only build for tags that do not already exist in
+the target folder. Branches are always built because they are subject to change.
+
+Links to all versions in smv_tag_whitelist and smv_branch_whitelist are
+always included in the generated sidebar as these have been previously built.
+
+Thus, if you whitelist master and all released tags, this will only build
+the reference in the current commit.
+
+This will result in a set of documentation pages that have links to master and to
+previous releases. There will be no links to future versions in historical documentation
+pages. This is acceptable because master will always have links to all versions and all
+versions will have a link to master.
+
 
 Overriding Configuration Variables
 ==================================

@@ -67,6 +67,7 @@ def load_sphinx_config_worker(q, confpath, confoverrides, add_defaults):
                 str,
             )
             current_config.add("smv_prefer_remote_refs", False, "html", bool)
+            current_config.add("smv_rebuild_tags", True, "html", bool)
         current_config.pre_init_values()
         current_config.init_values()
     except Exception as err:
@@ -160,10 +161,17 @@ def main(argv=None):
         action="store_true",
         help="dump generated metadata and exit",
     )
+    parser.add_argument(
+        "--log-level",
+        help="Set log level. Options: error, warning, info, debug.",
+        default="warning",
+    )
     args, argv = parser.parse_known_args(argv)
     if args.noconfig:
         return 1
 
+    numeric_level = getattr(logging, args.log_level.upper(), None)
+    logging.basicConfig(level=numeric_level)
     logger = logging.getLogger(__name__)
 
     sourcedir_absolute = os.path.abspath(args.sourcedir)
@@ -261,6 +269,9 @@ def main(argv=None):
                     gitref.refname,
                 )
                 continue
+            else:
+                logger.info(f"{outputdir} added to sidebar links")
+
             outputdirs.add(outputdir)
 
             # Get List of files
@@ -307,6 +318,17 @@ def main(argv=None):
         # Run Sphinx
         argv.extend(["-D", "smv_metadata_path={}".format(metadata_path)])
         for version_name, data in metadata.items():
+
+            if (
+                (not config.smv_rebuild_tags)
+                and data["source"] == "tags"
+                and pathlib.Path(data["outputdir"]).exists()
+            ):
+                logger.warning(f"skipping {version_name} - it already exists")
+                continue
+            else:
+                logger.info(f"building {version_name} ...")
+
             os.makedirs(data["outputdir"], exist_ok=True)
 
             defines = itertools.chain(
